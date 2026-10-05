@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Birth Year Checker</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      background-color: #461963;
+      color: #d2adeb;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: clamp(12px, 3vw, 32px);
+      position: relative;
+    }
+
+    /* Non-interactive screen-edge vignette (~25% darker edges) */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      pointer-events: none !important;
+      z-index: 0;
+      background: radial-gradient(
+        circle at center,
+        transparent 35%,
+        rgba(49, 17, 70, 0.5) 70%,
+        rgba(32, 11, 46, 0.85) 100%
+      );
+    }
+
+    .app-viewport {
+      width: min(92vw, 850px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      margin: auto;
+      position: relative;
+      z-index: 10;
+    }
+
+    .step {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(1rem, 3.5vh, 2.5rem);
+    }
+
+    .year-form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(1rem, 2.5vh, 2rem);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Primary Heading Text */
+    .question-text {
+      font-size: clamp(1.2rem, 3.8vw, 2.2rem);
+      line-height: 1.45;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      
+      opacity: 0;
+      transform: translateY(clamp(20px, 4vh, 45px));
+      animation: slideUpFadeIn 5.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .disclaimer {
+      display: block;
+      margin-top: clamp(0.5rem, 1.8vh, 1.2rem);
+      font-size: clamp(0.85rem, 2.4vw, 1.25rem);
+      color: #c091df;
+      font-weight: 400;
+      opacity: 0.9;
+    }
+
+    .year-input {
+      width: min(100%, clamp(200px, 50vw, 360px));
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 600;
+      text-align: center;
+      color: #ffffff;
+      padding: clamp(6px, 1.5vh, 12px) 0;
+
+      opacity: 0;
+      transform: translateY(clamp(20px, 4vh, 45px));
+      animation: slideUpFadeIn 5.4s cubic-bezier(0.16, 1, 0.3, 1) 1.2s forwards;
+    }
+
+    .year-input::placeholder {
+      color: rgba(210, 173, 235, 0.35);
+      font-weight: 400;
+    }
+
+    .year-input:focus {
+      outline: none;
+      box-shadow: none;
+    }
+
+    /* Hide WebKit number spin arrows */
+    .year-input::-webkit-outer-spin-button,
+    .year-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .year-input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    /* Action Buttons (Submit & Enter A Different Birth Year) */
+    .action-btn {
+      background-color: #6c2a96;
+      border: 2px solid #b188cc;
+      color: #ffffff;
+      border-radius: clamp(10px, 2vw, 16px);
+      font-size: clamp(1rem, 2.6vw, 1.35rem);
+      font-weight: 600;
+      padding: clamp(10px, 2vh, 14px) clamp(24px, 5vw, 44px);
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.2s ease;
+      touch-action: manipulation;
+
+      opacity: 0;
+      transform: translateY(clamp(20px, 4vh, 45px));
+      animation: slideUpFadeIn 5.4s cubic-bezier(0.16, 1, 0.3, 1) 2.2s forwards;
+    }
+
+    .action-btn:hover {
+      background-color: #7d32ad;
+    }
+
+    .action-btn:active {
+      transform: scale(0.98);
+    }
+
+    .results-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(1.2rem, 3.5vh, 2.2rem);
+    }
+
+    .response-line {
+      font-size: clamp(1.15rem, 3.5vw, 2.1rem);
+      line-height: 1.5;
+      font-weight: 500;
+      color: #f1e4fa;
+
+      opacity: 0;
+      transform: translateY(clamp(20px, 4vh, 40px));
+      animation: slideUpFadeIn 4.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes slideUpFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(clamp(20px, 4vh, 45px));
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-height: 520px) and (orientation: landscape) {
+      .app-viewport {
+        padding: 10px 0;
+      }
+      .step {
+        gap: 0.6rem;
+      }
+      .question-text {
+        font-size: clamp(1rem, 4vh, 1.4rem);
+        line-height: 1.3;
+      }
+      .disclaimer {
+        margin-top: 0.2rem;
+        font-size: clamp(0.75rem, 3vh, 0.95rem);
+      }
+      .year-input {
+        font-size: clamp(1.3rem, 6vh, 2rem);
+        padding: 2px 0;
+      }
+      .action-btn {
+        font-size: clamp(0.85rem, 4vh, 1.1rem);
+        padding: 6px 20px;
+      }
+      .response-line {
+        font-size: clamp(0.95rem, 4.5vh, 1.3rem);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="app-viewport">
+    
+    <!-- Step 1: Input Question View -->
+    <section id="stepInput" class="step">
+      <h1 class="question-text">
+        What is the year you were born? 
+        <span class="disclaimer">(This data is not saved anywhere, even if it was you aren't telling us your name so why would it matter?)</span>
+      </h1>
+
+      <form id="birthForm" class="year-form" onsubmit="return false;">
+        <input 
+          type="text" 
+          id="birthYearInput" 
+          class="year-input" 
+          placeholder="e.g. 2002"
+          inputmode="decimal"
+          enterkeyhint="go"
+          autocomplete="off"
+          autofocus
+        />
+        <button type="button" id="submitBtn" class="action-btn">Submit</button>
+      </form>
+    </section>
+
+    <!-- Step 2: Dynamic Animated Response View -->
+    <section id="stepResults" class="step hidden">
+      <div id="resultsContainer" class="results-container"></div>
+      <button type="button" id="resetBtn" class="action-btn">Enter A Different Birth Year</button>
+    </section>
+
+  </main>
+
+  <script>
+    const inputStep = document.getElementById('stepInput');
+    const resultsStep = document.getElementById('stepResults');
+    const birthForm = document.getElementById('birthForm');
+    const yearInput = document.getElementById('birthYearInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    // Retrieve user's device year with safety fallback
+    function getCurrentYear() {
+      try {
+        const localYear = new Date().getFullYear();
+        if (!isNaN(localYear) && localYear >= 2000 && localYear <= 2100) {
+          return localYear;
+        }
+      } catch (e) {}
+
+      try {
+        const utcYear = new Date().getUTCFullYear();
+        if (!isNaN(utcYear) && utcYear >= 2000 && utcYear <= 2100) {
+          return utcYear;
+        }
+      } catch (e) {}
+
+      return 2026;
+    }
+
+    function submitHandler() {
+      processYear(yearInput.value.trim());
+    }
+
+    submitBtn.addEventListener('click', submitHandler);
+
+    birthForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      submitHandler();
+    });
+
+    yearInput.addEventListener('keyup', (event) => {
+      if (event.key === 'Enter' || event.keyCode === 13) {
+        event.preventDefault();
+        submitHandler();
+      }
+    });
+
+    // Reset buttons and keyboard shortcuts for returning to input
+    resetBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      resetApp();
+    });
+
+    resultsStep.addEventListener('click', (event) => {
+      if (event.target === resetBtn) return;
+      resetApp();
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if ((event.key === 'Enter' || event.keyCode === 13) && !resultsStep.classList.contains('hidden')) {
+        resetApp();
+      }
+    });
+
+    function processYear(rawValue) {
+      if (!rawValue) return;
+
+      yearInput.blur();
+
+      const currentYear = getCurrentYear();
+      let messages = [];
+
+      // 1. Decimal Check
+      if (rawValue.includes('.')) {
+        messages.push("Ok 'Mr. I want to be specific and can't just enter a whole number' try again and put in your birth year without a decimal");
+      } else {
+        const yearNum = parseInt(rawValue, 10);
+
+        if (isNaN(yearNum)) {
+          messages.push("Please enter a valid numeric year.");
+        } else {
+          // 2. Future Year Check
+          if (yearNum > currentYear) {
+            messages.push("Bro you don't exist yet how am I suppose to know what generation you're from");
+          } 
+          // 3. Jeanne Calment Check (122 years prior)
+          else if (yearNum <= (currentYear - 122)) {
+            messages.push("You have not lived longer than the oldest person to live why are you lying? Btw the oldest person to live was Jeanne Calment of France, who lived to be 122 years old, just to educate you");
+          } 
+          // 4. Overlapping Generation Checks
+          else {
+            const isAlphaRule1 = (yearNum >= 2010 && yearNum <= 2024);
+            const isAlphaRule2 = (yearNum >= 2013 && yearNum <= 2025);
+            const isGenZ       = (yearNum >= 1997 && yearNum <= 2012);
+
+            // Overlap: Gen-Z (1997-2012) AND Gen-Alpha 1 (2010-2024) [2010 to 2012]
+            if (isGenZ && isAlphaRule1) {
+              messages.push("If you're going off of Gen Alpha being between 2010 and 2024, then Yes you are Gen Alpha, but if not, then you are Gen Z!");
+            }
+            // Overlap: Both Gen-Alpha definitions [2013 to 2024]
+            else if (isAlphaRule1 && isAlphaRule2) {
+              messages.push("Whether you define Gen Alpha as 2010–2024 or 2013–2025, either way, Yes you are Gen Alpha!");
+            }
+            // Gen-Alpha 2 only [2025]
+            else if (isAlphaRule2) {
+              messages.push("If you're going off of Gen Alpha being between 2013 and 2025, then Yes you are Gen Alpha!");
+            }
+            // Gen-Z only [1997 to 2009]
+            else if (isGenZ) {
+              messages.push("No you're not Gen Alpha, you are Gen-Z!");
+            }
+            else {
+              messages.push(`You were born in ${yearNum}!`);
+            }
+          }
+        }
+      }
+
+      displayResults(messages);
+    }
+
+    function displayResults(messages) {
+      resultsContainer.innerHTML = '';
+
+      messages.forEach((msgText, index) => {
+        const p = document.createElement('p');
+        p.className = 'response-line';
+        p.textContent = msgText;
+        
+        const delay = index * 0.9;
+        p.style.animationDelay = `${delay}s`;
+
+        resultsContainer.appendChild(p);
+      });
+
+      // Animate reset button in after response lines
+      const btnDelay = (messages.length * 0.9) + 0.3;
+      resetBtn.style.animationDelay = `${btnDelay}s`;
+
+      inputStep.classList.add('hidden');
+      resultsStep.classList.remove('hidden');
+    }
+
+    function resetApp() {
+      yearInput.value = '';
+      resultsContainer.innerHTML = '';
+      resultsStep.classList.add('hidden');
+      inputStep.classList.remove('hidden');
+
+      // Re-trigger slide-in keyframe animations
+      const questionText = document.querySelector('.question-text');
+      questionText.style.animation = 'none';
+      yearInput.style.animation = 'none';
+      submitBtn.style.animation = 'none';
+      
+      void questionText.offsetWidth; // Force layout reflow
+
+      questionText.style.animation = 'slideUpFadeIn 5.4s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+      yearInput.style.animation = 'slideUpFadeIn 5.4s cubic-bezier(0.16, 1, 0.3, 1) 1.2s forwards';
+      submitBtn.style.animation = 'slideUpFadeIn 5.4s cubic-bezier(0.16, 1, 0.3, 1) 2.2s forwards';
+
+      yearInput.focus();
+    }
+  </script>
+
+</body>
+</html>
